@@ -27,7 +27,7 @@ let config = {
   jwtSecret: 'qweqweuiquhjkdncjnzxncb12ne23h194y12u84134234h2j34h3',
   mediaTypes: ['photo', 'video', 'document'],
   mongo: { uri: 'mongodb://localhost:27017/local-express-boilerplate' },
-  port: 3001,
+  port: 8080,
   roles: ['admin', 'user'],
   socketPort: 3002,
   socketUrl: 'localhost',
