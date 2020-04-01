@@ -6,7 +6,7 @@ const locationAPI = require("./src/locationAPI");
 
 
 const stat = [
-    post('/get/stat', statAPI.info),
+    post('/get/stats', statAPI.info),
     get('/get/locations', locationAPI.getAll)
 ];
 
@@ -25,15 +25,16 @@ const handleError = error(ctx => {
 
 server(
     {
-    port: 3000,
-    parser: {
-        body: {limit: '1mb'},
-        json: {limit: '1mb'}
+        port: 8080,
+        parser: {
+            body: {limit: '1mb'},
+            json: {limit: '1mb'}
+        },
+        security: {
+            csrf: false
+        },
+        PUBLIC: 'public'
     },
-    security: {
-        csrf: false
-    }
-},
     cors,
     stat,
     handleError,

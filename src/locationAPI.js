@@ -44,13 +44,15 @@ exports.getAll = async (ctx) => {
             isState: true
         })
     });
-    return json(finalResult.sort((a, b) => {
-        if (a.label < b.label) {
-            return -1;
-        }
-        if (a.label > b.label) {
-            return 1;
-        }
-        return 0;
-    }));
+    return json({
+        locations: finalResult.sort((a, b) => {
+            if (a.label < b.label) {
+                return -1;
+            }
+            if (a.label > b.label) {
+                return 1;
+            }
+            return 0;
+        })
+    });
 };

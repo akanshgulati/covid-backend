@@ -1,13 +1,22 @@
-const {status, json} = require('server/reply');
-const { NovelCovid } = require('novelcovid');
+const {json} = require('server/reply');
+const {NovelCovid} = require('novelcovid');
 const axios = require("axios");
 
 exports.info = async ctx => {
     const track = new NovelCovid();
-    
-    const body = JSON.parse(ctx.body);
-    const countries = body.countries || [];
-    const states = body.states;
+    const body = ctx.body;
+    let countries = [];
+    let states = [];
+
+    body.locations.forEach(location => {
+        const length = location.split("-").length;
+        if (length === 1) {
+            countries.push(location);
+        } else if (length === 2) {
+            states.push(location);
+        }
+    });
+
     let USStates = [];
     let IndianStates = [];
     if (states && states.length) {
@@ -21,16 +30,30 @@ exports.info = async ctx => {
             }
         });
     }
-    
+
     let finalResult = [];
-    let promiseCount = +(!!countries.length) + +(!!USStates.length) + +(!!IndianStates.length);
+    let globalResult = {};
+    let promiseCount = +(!!countries.length) + +(!!USStates.length) + +(!!IndianStates.length) + 1;
     let currentCount = 0;
     let countryData;
-    console.log("Promise count", promiseCount);
-    
-    await new Promise((resolve, reject)=>{
+
+    await new Promise((resolve, reject) => {
+        track.all().then(result => {
+            globalResult = {
+                active: result.active,
+                total: result.cases,
+                fatal: result.deaths,
+                recover: result.recovered
+            };
+            currentCount++;
+            if (currentCount === promiseCount) {
+                resolve();
+            }
+        });
+        
         if (countries.length) {
             const set = new Set(countries);
+
             track.countries().then(result => {
                 countryData = result.filter(country => set.has(country.countryInfo.iso2));
                 finalResult = finalResult.concat(formatCountry(countryData));
@@ -62,7 +85,11 @@ exports.info = async ctx => {
             })
         }
     });
-    return json(finalResult);
+    return json({
+        locations: finalResult,
+        global: globalResult,
+        updated: +new Date()
+    });
 };
 
 function formatCountry(data) {
@@ -77,9 +104,13 @@ function formatCountry(data) {
                 recover: item.recovered,
                 total: item.cases
             },
-            today: {
+            delta: {
                 total: item.todayCases,
-                fatal: item.todayDeaths
+                fatal: item.todayDeaths,
+                totalSymbol: "+",
+                fatalSymbol: "+",
+                recoverSymbol: "+",
+                activeSymbol: "+"
             },
             updated: item.updated
         }
@@ -98,9 +129,13 @@ function formatUSStates(data) {
                 recover: item.cases - item.deaths - item.active,
                 total: item.cases
             },
-            today: {
+            delta: {
                 total: item.todayCases,
-                fatal: item.todayDeaths
+                fatal: item.todayDeaths,
+                totalSymbol: "+",
+                fatalSymbol: "+",
+                recoverSymbol: "+",
+                activeSymbol: "+"
             },
             updated: ""
         }
@@ -120,11 +155,15 @@ function formatIndianStates(data) {
                 recover: item.recovered,
                 total: item.confirmed
             },
-            today: {
+            delta: {
                 total: item.delta.confirmed,
                 fatal: item.delta.deaths,
                 recover: item.delta.recovered,
                 active: item.delta.active,
+                totalSymbol: "+",
+                fatalSymbol: "+",
+                recoverSymbol: "+",
+                activeSymbol: "+"
             },
             updated: ""
         }
