@@ -12,7 +12,7 @@ exports.getAll = async (ctx) => {
     ]);
     const countriesData = result[0];
     const USStatesData = result[1];
-    const IndianStatesData = result[2] && result[2].statewise;
+    const IndianStatesData = result[2] && result[2].statewise.filter(stateInfo => stateInfo.state !== "Total");
 
     const finalResult = [];
     countriesData.forEach(countryInfo => {
