@@ -150,10 +150,10 @@ function formatIndianStates(data) {
             iso: "IN",
             code: "IN-" + item.state,
             all: {
-                active: item.active,
-                fatal: item.deaths,
-                recover: item.recovered,
-                total: item.confirmed
+                active: +item.active,
+                fatal: +item.deaths,
+                recover: +item.recovered,
+                total: +item.confirmed
             },
             delta: {
                 total: item.delta.confirmed,
