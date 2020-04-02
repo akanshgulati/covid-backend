@@ -12,17 +12,19 @@ exports.getAll = async (ctx) => {
     ]);
     const countriesData = result[0];
     const USStatesData = result[1];
-    const IndianStatesData = result[2];
+    const IndianStatesData = result[2] && result[2].statewise;
 
     const finalResult = [];
     countriesData.forEach(countryInfo => {
-        finalResult.push({
-            label: countryInfo.country,
-            code: countryInfo.countryInfo.iso2,
-            value: countryInfo.countryInfo.iso2,
-            isCountry: true,
-            isState: false
-        })
+        if (countryInfo.countryInfo.iso2) {
+            finalResult.push({
+                label: countryInfo.country,
+                code: countryInfo.countryInfo.iso2,
+                value: countryInfo.countryInfo.iso2,
+                isCountry: true,
+                isState: false
+            })
+        }
     });
     USStatesData.forEach(data => {
         finalResult.push({
@@ -34,7 +36,7 @@ exports.getAll = async (ctx) => {
             isState: true
         });
     });
-    IndianStatesData.statewise.forEach(data => {
+    IndianStatesData.forEach(data => {
         finalResult.push({
             label: data.state,
             code: "IN",

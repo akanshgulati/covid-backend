@@ -53,10 +53,12 @@ exports.info = async ctx => {
         
         if (countries.length) {
             const set = new Set(countries);
-
-            track.countries().then(result => {
-                countryData = result.filter(country => set.has(country.countryInfo.iso2));
-                finalResult = finalResult.concat(formatCountry(countryData));
+            axios.all([
+                axios.get("https://corona.lmao.ninja/yesterday").then(resp => resp.data), 
+                track.countries()
+            ]).then(result => {
+                countryData = result[1].filter(country => set.has(country.countryInfo.iso2));
+                finalResult = finalResult.concat(formatCountry(countryData, result[0]));
                 currentCount++;
                 if (currentCount === promiseCount) {
                     resolve();
@@ -92,8 +94,31 @@ exports.info = async ctx => {
     });
 };
 
-function formatCountry(data) {
+function getSymbol(number) {
+    return number < 0 ? "-" : "+";
+}
+function formatCountry(data, prevDayData) {
+    const prevDayDataMap = new Map();
+    if (prevDayData && prevDayData.length) {
+        // creating map
+        prevDayData.forEach(country => {
+            prevDayDataMap.set(country.countryInfo.iso2, country);
+        });
+    }
     return data.map(item => {
+        // checking if yesterday data is present
+        const yesterdayData = prevDayDataMap.get(item.countryInfo.iso2);
+        let isRecoverDelta,
+            isActiveDelta,
+            activeDelta,
+            recoverDelta;
+        
+        if (yesterdayData) {
+            isRecoverDelta = typeof yesterdayData.recovered !== "undefined";
+            isActiveDelta = typeof yesterdayData.active !== "undefined";
+            activeDelta = item.active - yesterdayData.active;
+            recoverDelta = item.recovered - yesterdayData.recovered;
+        }
         return {
             label: item.country,
             iso: item.countryInfo.iso2,
@@ -107,10 +132,12 @@ function formatCountry(data) {
             delta: {
                 total: item.todayCases,
                 fatal: item.todayDeaths,
+                recover: isRecoverDelta ? Math.abs(recoverDelta) : null,
+                active: isActiveDelta ? Math.abs(activeDelta) : null,
                 totalSymbol: "+",
                 fatalSymbol: "+",
-                recoverSymbol: "+",
-                activeSymbol: "+"
+                recoverSymbol: getSymbol(recoverDelta),
+                activeSymbol: getSymbol(activeDelta)
             },
             updated: item.updated
         }
@@ -150,10 +177,10 @@ function formatIndianStates(data) {
             iso: "IN",
             code: "IN-" + item.state,
             all: {
-                active: +item.active,
-                fatal: +item.deaths,
-                recover: +item.recovered,
-                total: +item.confirmed
+                active: parseInt(item.active),
+                fatal: parseInt(item.deaths),
+                recover: parseInt(item.recovered),
+                total: parseInt(item.confirmed)
             },
             delta: {
                 total: item.delta.confirmed,
