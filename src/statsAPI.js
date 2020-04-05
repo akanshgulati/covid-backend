@@ -183,10 +183,10 @@ function formatIndianStates(data) {
                 total: parseInt(item.confirmed)
             },
             delta: {
-                total: item.delta.confirmed,
-                fatal: item.delta.deaths,
-                recover: item.delta.recovered,
-                active: item.delta.active,
+                total: item.deltaconfirmed,
+                fatal: item.deltadeaths,
+                recover: item.deltarecovered,
+                active: item.deltaactive,
                 totalSymbol: "+",
                 fatalSymbol: "+",
                 recoverSymbol: "+",
