@@ -170,7 +170,7 @@ function formatUSStates(data) {
 }
 
 function formatIndianStates(data) {
-    console.log("Data", data);
+    // console.log("Data", data);
     return data.map(item => {
         return {
             label: item.state,
@@ -183,10 +183,10 @@ function formatIndianStates(data) {
                 total: parseInt(item.confirmed)
             },
             delta: {
-                total: item.deltaconfirmed,
-                fatal: item.deltadeaths,
-                recover: item.deltarecovered,
-                active: item.deltaactive,
+                total: +item.deltaconfirmed,
+                fatal: +item.deltadeaths,
+                recover: +item.deltarecovered,
+                active: +item.deltaactive,
                 totalSymbol: "+",
                 fatalSymbol: "+",
                 recoverSymbol: "+",
@@ -201,7 +201,7 @@ function fetchIndianStateData(states) {
     return axios.get("https://api.covid19india.org/data.json").then(result => {
         const allStateData = result.data.statewise;
         const set = new Set(states);
-        console.log("States", states);
+        // console.log("States", states);
         return allStateData.filter(stateInfo => set.has(stateInfo.state));
     });
 }
