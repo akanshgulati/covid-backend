@@ -1,102 +1,158 @@
-const {json} = require('server/reply');
-const {NovelCovid} = require('novelcovid');
-const axios = require("axios");
+const { json } = require('server/reply');
+const { NovelCovid } = require('novelcovid');
+const axios = require('axios');
+const LocationService = require('./services/location');
 
 exports.info = async ctx => {
     const track = new NovelCovid();
     const body = ctx.body;
     let countries = [];
-    let states = [];
+    let USStates = [];
+    let IndianStates = [];
+
+    await LocationService.isReady();
 
     body.locations.forEach(location => {
-        const length = location.split("-").length;
-        if (length === 1) {
+        const value = LocationService.StateCountryDiffService(location);
+        if (value.isCountry) {
             countries.push(location);
-        } else if (length === 2) {
-            states.push(location);
+        } else if (value.isState) {
+            if (value.code === 'IN') {
+                IndianStates.push(value.label);
+            } else if (value.code === 'US') {
+                USStates.push(value.label);
+            }
         }
     });
 
-    let USStates = [];
-    let IndianStates = [];
-    if (states && states.length) {
-        states.forEach(item => {
-            const split = item.split("-");
-            const country = split[0];
-            if (country === "US") {
-                USStates.push(split[1]);
-            } else if (country === "IN") {
-                IndianStates.push(split[1]);
-            }
-        });
-    }
+    // if (states && states.length) {
+    //     states.forEach(item => {
+    //         const split = item.split("-");
+    //         const country = split[0];
+    //         if (country === "US") {
+    //             USStates.push(split[1]);
+    //         } else if (country === "IN") {
+    //             IndianStates.push(split[1]);
+    //         }
+    //     });
+    // }
 
     let finalResult = [];
     let globalResult = {};
-    let promiseCount = +(!!countries.length) + +(!!USStates.length) + +(!!IndianStates.length) + 1;
+    // plus 1 is for global count promise
+    let promiseCount =
+        +!!countries.length + +!!USStates.length + +!!IndianStates.length + 1;
     let currentCount = 0;
     let countryData;
 
-    await new Promise((resolve, reject) => {
-        track.all().then(result => {
-            globalResult = {
-                active: result.active,
-                total: result.cases,
-                fatal: result.deaths,
-                recover: result.recovered
-            };
-            currentCount++;
-            if (currentCount === promiseCount) {
-                resolve();
-            }
-        });
-        
-        if (countries.length) {
-            const set = new Set(countries);
-            axios.all([
-                axios.get("https://corona.lmao.ninja/yesterday").then(resp => resp.data), 
-                track.countries()
-            ]).then(result => {
-                countryData = result[1].filter(country => set.has(country.countryInfo.iso2));
-                finalResult = finalResult.concat(formatCountry(countryData, result[0]));
+    await new Promise(resolve => {
+        track
+            .all()
+            .then(result => {
+                globalResult = {
+                    active: result.active,
+                    total: result.cases,
+                    fatal: result.deaths,
+                    recover: result.recovered,
+                };
+            })
+            .catch(e => {
+                globalResult = {
+                    active: 0,
+                    total: 0,
+                    fatal: 0,
+                    recover: 0,
+                };
+                ctx.log.error('Track All Failed ', e);
+            })
+            .then(() => {
                 currentCount++;
                 if (currentCount === promiseCount) {
                     resolve();
                 }
             });
+
+        if (countries.length) {
+            const set = new Set(countries);
+            axios
+                .all([
+                    axios
+                        .get('https://corona.lmao.ninja/yesterday')
+                        .then(resp => resp.data),
+                    track.countries(),
+                ])
+                .then(result => {
+                    countryData = result[1].filter(country =>
+                        set.has(country.countryInfo.iso2)
+                    );
+                    finalResult = finalResult.concat(
+                        formatCountry(countryData, result[0])
+                    );
+                })
+                .catch(e => {
+                    ctx.log.error('Track Countries API Failed ', e);
+                })
+                .then(() => {
+                    currentCount++;
+                    if (currentCount === promiseCount) {
+                        resolve();
+                    }
+                });
         }
 
         if (USStates.length) {
-            track.states().then(result => {
-                const USStatesData = result.filter(state => USStates.indexOf(state.state) > -1);
-                finalResult = finalResult.concat(formatUSStates(USStatesData));
-                currentCount++;
-                if (currentCount === promiseCount) {
-                    resolve();
-                }
-            });
+            const USStateSet = new Set(USStates);
+            track
+                .states()
+                .then(result => {
+                    const USStatesData = result.filter(state =>
+                        USStateSet.has(state.state)
+                    );
+                    finalResult = finalResult.concat(
+                        formatUSStates(USStatesData)
+                    );
+                })
+                .catch(e => {
+                    ctx.log.error('US States API Failed ', e);
+                })
+                .then(() => {
+                    currentCount++;
+                    if (currentCount === promiseCount) {
+                        resolve();
+                    }
+                });
         }
 
         if (IndianStates.length) {
-            fetchIndianStateData(IndianStates).then(result => {
-                finalResult = finalResult.concat(formatIndianStates(result));
-                currentCount++;
-                if (currentCount === promiseCount) {
-                    resolve();
-                }
-            })
+            fetchIndianStateData(IndianStates)
+                .then(result => {
+                    finalResult = finalResult.concat(
+                        formatIndianStates(result)
+                    );
+                })
+                .catch(e => {
+                    ctx.log.error('Indian States API Failed ', e);
+                })
+                .then(() => {
+                    currentCount++;
+                    if (currentCount === promiseCount) {
+                        resolve();
+                    }
+                });
         }
     });
+
     return json({
         locations: finalResult,
         global: globalResult,
-        updated: +new Date()
+        updated: +new Date(),
     });
 };
 
 function getSymbol(number) {
-    return number < 0 ? "-" : "+";
+    return number < 0 ? '-' : '+';
 }
+
 function formatCountry(data, prevDayData) {
     const prevDayDataMap = new Map();
     if (prevDayData && prevDayData.length) {
@@ -108,14 +164,11 @@ function formatCountry(data, prevDayData) {
     return data.map(item => {
         // checking if yesterday data is present
         const yesterdayData = prevDayDataMap.get(item.countryInfo.iso2);
-        let isRecoverDelta,
-            isActiveDelta,
-            activeDelta,
-            recoverDelta;
-        
+        let isRecoverDelta, isActiveDelta, activeDelta, recoverDelta;
+
         if (yesterdayData) {
-            isRecoverDelta = typeof yesterdayData.recovered !== "undefined";
-            isActiveDelta = typeof yesterdayData.active !== "undefined";
+            isRecoverDelta = typeof yesterdayData.recovered !== 'undefined';
+            isActiveDelta = typeof yesterdayData.active !== 'undefined';
             activeDelta = item.active - yesterdayData.active;
             recoverDelta = item.recovered - yesterdayData.recovered;
         }
@@ -127,81 +180,79 @@ function formatCountry(data, prevDayData) {
                 active: item.active,
                 fatal: item.deaths,
                 recover: item.recovered,
-                total: item.cases
+                total: item.cases,
             },
             delta: {
                 total: item.todayCases,
                 fatal: item.todayDeaths,
                 recover: isRecoverDelta ? Math.abs(recoverDelta) : null,
                 active: isActiveDelta ? Math.abs(activeDelta) : null,
-                totalSymbol: "+",
-                fatalSymbol: "+",
+                totalSymbol: '+',
+                fatalSymbol: '+',
                 recoverSymbol: getSymbol(recoverDelta),
-                activeSymbol: getSymbol(activeDelta)
+                activeSymbol: getSymbol(activeDelta),
             },
-            updated: item.updated
-        }
-    })
+            updated: item.updated,
+        };
+    });
 }
 
 function formatUSStates(data) {
     return data.map(item => {
         return {
             label: item.state,
-            iso: "US",
-            code: "US-" + item.state,
+            iso: 'US',
+            code: 'US-' + item.state,
             all: {
                 active: item.active,
                 fatal: item.deaths,
                 recover: item.cases - item.deaths - item.active,
-                total: item.cases
+                total: item.cases,
             },
             delta: {
                 total: item.todayCases,
                 fatal: item.todayDeaths,
-                totalSymbol: "+",
-                fatalSymbol: "+",
-                recoverSymbol: "+",
-                activeSymbol: "+"
+                totalSymbol: '+',
+                fatalSymbol: '+',
+                recoverSymbol: '+',
+                activeSymbol: '+',
             },
-            updated: ""
-        }
+            updated: '',
+        };
     });
 }
 
 function formatIndianStates(data) {
-    // console.log("Data", data);
     return data.map(item => {
         return {
             label: item.state,
-            iso: "IN",
-            code: "IN-" + item.state,
+            iso: 'IN',
+            code: 'IN-' + item.state,
             all: {
                 active: parseInt(item.active),
                 fatal: parseInt(item.deaths),
                 recover: parseInt(item.recovered),
-                total: parseInt(item.confirmed)
+                total: parseInt(item.confirmed),
             },
             delta: {
                 total: +item.deltaconfirmed,
                 fatal: +item.deltadeaths,
                 recover: +item.deltarecovered,
                 active: +item.deltaactive,
-                totalSymbol: "+",
-                fatalSymbol: "+",
-                recoverSymbol: "+",
-                activeSymbol: "+"
+                totalSymbol: '+',
+                fatalSymbol: '+',
+                recoverSymbol: '+',
+                activeSymbol: '+',
             },
-            updated: ""
-        }
+            updated: '',
+        };
     });
 }
 
 function fetchIndianStateData(states) {
-    return axios.get("https://api.covid19india.org/data.json").then(result => {
+    return axios.get('https://api.covid19india.org/data.json').then(result => {
         const allStateData = result.data.statewise;
         const set = new Set(states);
-        // console.log("States", states);
         return allStateData.filter(stateInfo => set.has(stateInfo.state));
     });
 }

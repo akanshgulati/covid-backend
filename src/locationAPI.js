@@ -1,18 +1,22 @@
-const {json} = require('server/reply');
-const {NovelCovid} = require('novelcovid');
-const axios = require("axios");
+const { json } = require('server/reply');
+const { NovelCovid } = require('novelcovid');
+const axios = require('axios');
 
-exports.getAll = async (ctx) => {
+exports.getAll = async () => {
     let covid = new NovelCovid();
 
     const result = await axios.all([
         covid.countries(),
         covid.states(),
-        axios.get("https://api.covid19india.org/data.json").then(resp => resp.data)
+        axios
+            .get('https://api.covid19india.org/data.json')
+            .then(resp => resp.data),
     ]);
     const countriesData = result[0];
     const USStatesData = result[1];
-    const IndianStatesData = result[2] && result[2].statewise.filter(stateInfo => stateInfo.state !== "Total");
+    const IndianStatesData =
+        result[2] &&
+        result[2].statewise.filter(stateInfo => stateInfo.state !== 'Total');
 
     const finalResult = [];
     countriesData.forEach(countryInfo => {
@@ -22,29 +26,29 @@ exports.getAll = async (ctx) => {
                 code: countryInfo.countryInfo.iso2,
                 value: countryInfo.countryInfo.iso2,
                 isCountry: true,
-                isState: false
-            })
+                isState: false,
+            });
         }
     });
     USStatesData.forEach(data => {
         finalResult.push({
             label: data.state,
             code: 'US',
-            country: "US",
-            value: "US-" + data.state,
+            country: 'US',
+            value: 'US-' + data.state,
             isCountry: false,
-            isState: true
+            isState: true,
         });
     });
     IndianStatesData.forEach(data => {
         finalResult.push({
             label: data.state,
-            code: "IN",
-            country: "IN",
-            value: "IN-" + data.state,
+            code: 'IN',
+            country: 'IN',
+            value: 'IN-' + data.state,
             isCountry: false,
-            isState: true
-        })
+            isState: true,
+        });
     });
     return json({
         locations: finalResult.sort((a, b) => {
@@ -55,6 +59,6 @@ exports.getAll = async (ctx) => {
                 return 1;
             }
             return 0;
-        })
+        }),
     });
 };
