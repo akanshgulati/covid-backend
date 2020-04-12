@@ -32,7 +32,7 @@ const handleError = error(ctx => {
     return status(404).send('not found');
 });
 
-function cronInit() {
+function cronInit(ctx) {
     try {
         setInterval(() => {
             CronCheck.check().then(result => {
@@ -68,5 +68,5 @@ server(
     console.log(`Server launched on http://localhost:${ctx.options.port}/`);
     LocationService.init();
     // check in every 6 hours
-    cronInit();
+    cronInit(ctx);
 });
