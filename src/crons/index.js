@@ -92,7 +92,7 @@ async function checkNovelIndia() {
         obj[key] = typeof allStates[0][key];
     });
     const result = compareObj(obj, inState);
-    return result ? "" : "All Indian state API is failing\n";
+    return result ? "" : "A India state API is failing\n";
 }
 
 exports.check = async () => {

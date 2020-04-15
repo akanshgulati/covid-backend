@@ -6,7 +6,7 @@
   "deltadeaths": "string",
   "deltarecovered": "string",
   "lastupdatedtime": "string",
-  "recovered": "object",
+  "recovered": "string",
   "state": "string",
   "statecode": "string"
 }
