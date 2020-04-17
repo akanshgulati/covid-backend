@@ -8,5 +8,6 @@
   "lastupdatedtime": "string",
   "recovered": "string",
   "state": "string",
-  "statecode": "string"
+  "statecode": "string",
+  "statenotes": "string"
 }

@@ -35,14 +35,18 @@ const handleError = error(ctx => {
 function cronInit(ctx) {
     try {
         setInterval(() => {
-            CronCheck.check().then(result => {
-                if (!result) {
-                    ctx.log.info('No issue in data');
-                } else {
-                    ctx.log.error('Issue found in data ', result);
-                    MailService(result);
-                }
-            });
+            try {
+                CronCheck.check().then(result => {
+                    if (!result) {
+                        ctx.log.info('No issue in data');
+                    } else {
+                        ctx.log.error('Issue found in data ', result);
+                        MailService(result);
+                    }
+                });
+            } catch (e) {
+                MailService(JSON.stringify(e));
+            }
         }, 21600 * 1000);
     } catch (e) {
         ctx.log.error('Error in running cron ', e);
