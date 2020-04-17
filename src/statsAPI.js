@@ -70,9 +70,7 @@ exports.info = async ctx => {
             const set = new Set(countries);
             axios
                 .all([
-                    axios
-                        .get('https://corona.lmao.ninja/yesterday')
-                        .then(resp => resp.data),
+                    Promise.resolve([]),
                     track.countries(),
                 ])
                 .then(result => {
