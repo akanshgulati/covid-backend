@@ -43,7 +43,7 @@ function updateAllCountryData(data) {
         const result = {
             total: {},
             recover: {},
-            fatal: {}
+            fatal: {},
         };
         const countryKey = countryNameToIsoMap[datum.country];
         dateKeys.forEach(date => {
@@ -85,10 +85,12 @@ const CountryHistoricDataScript = async () => {
             .then(response => response.data);
         // if hash is different we are going to update redis
         const check = await updateData(RedisKeys.HISTORICAL_COUNTRIES, data);
-        return check ? "Redis Content for Country Updated" : "Redis Content for Country not updated";
+        return check
+            ? 'Redis Content for Country Updated'
+            : 'Redis Content for Country not updated';
     } catch (e) {
-        console.log("Error in country historic data");
-        return "Error in country historic data";
+        console.log('Error in country historic data');
+        return 'Error in country historic data';
     }
 };
 
@@ -121,16 +123,18 @@ const info = async ctx => {
             }
         }
     });
-    const promise = countries.map(country => RedisGet(RedisKeys.HISTORICAL_COUNTRY + country));
-    
+    const promise = countries.map(country =>
+        RedisGet(RedisKeys.HISTORICAL_COUNTRY + country)
+    );
+
     const result = await axios.all(promise).then(response => {
         return response.map((datum, index) => {
-            return Object.assign({}, {label: countries[index]}, datum);
-        })
+            return Object.assign({}, { label: countries[index] }, datum);
+        });
     });
-    console.log(result);
-    
-    return json({locations: result, updated: +new Date()});
+    // console.log(result);
+
+    return json({ locations: result, updated: +new Date() });
 };
 
 exports.info = info;
