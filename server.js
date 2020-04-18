@@ -3,13 +3,16 @@ const { post, error, get } = server.router;
 const { status, header } = server.reply;
 const statAPI = require('./src/statsAPI');
 const locationAPI = require('./src/locationAPI');
+const historicAPI = require('./src/historicAPI');
 const LocationService = require('./src/services/location');
 const CronCheck = require('./src/crons');
 const MailService = require('./src/services/mail-server');
+const {CountryHistoricDataScript} = require("./src/historicAPI");
 
 const stat = [
     post('/get/stats', statAPI.info),
     get('/get/locations', locationAPI.getAll),
+    post('/get/historic', historicAPI.info),
 ];
 
 const cors = [
@@ -48,6 +51,18 @@ function cronInit(ctx) {
                 MailService(JSON.stringify(e));
             }
         }, 21600 * 1000);
+        
+        setInterval(() => {
+            try {
+                CountryHistoricDataScript().then(res =>{
+                    ctx.log.info(res);
+                    MailService(JSON.stringify(e));
+                });
+            } catch (e) {
+                ctx.log.info("Historic API", e);
+                MailService(JSON.stringify(e));
+            }
+        }, 21600 * 1000);
     } catch (e) {
         ctx.log.error('Error in running cron ', e);
     }
@@ -73,4 +88,7 @@ server(
     LocationService.init();
     // check in every 6 hours
     cronInit(ctx);
+    CountryHistoricDataScript().then(res =>{
+        console.log(res);
+    });
 });
