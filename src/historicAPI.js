@@ -6,6 +6,7 @@ const RedisKeys = require('./constants/redisKey');
 const crypto = require('crypto');
 const LocationService = require('./services/location');
 const countryNameToIsoMap = require('./staticData/countryNameToIsoMap');
+const countryISOToName = require('./staticData/countryISOMap');
 
 function getHash(data) {
     return crypto
@@ -39,6 +40,9 @@ function RedisGet(key) {
 
 function updateAllCountryData(data) {
     data.forEach(datum => {
+        if (datum.country && datum.province){
+            return;
+        }
         const dateKeys = Object.keys(datum.timeline.cases).slice(-30);
         const result = {
             total: {},
@@ -129,7 +133,7 @@ const info = async ctx => {
 
     const result = await axios.all(promise).then(response => {
         return response.map((datum, index) => {
-            return Object.assign({}, { label: countries[index] }, datum);
+            return Object.assign({}, { label: countryISOToName[countries[index]] }, datum);
         });
     });
     // console.log(result);

@@ -192,6 +192,7 @@ function formatCountry(data, prevDayData) {
                 recoverSymbol: getSymbol(recoverDelta),
                 activeSymbol: getSymbol(activeDelta),
             },
+            hasHistoricData: true,
             updated: item.updated,
         };
     });
@@ -243,6 +244,7 @@ function formatIndiaCountry(item) {
             recoverSymbol: '+',
             activeSymbol: '+',
         },
+        hasHistoricData: true,
         updated: item.lastupdatedtime && formatIndianDate(item.lastupdatedtime),
     };
 }

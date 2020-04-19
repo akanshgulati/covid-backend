@@ -56,7 +56,7 @@ function cronInit(ctx) {
             try {
                 CountryHistoricDataScript().then(res =>{
                     ctx.log.info(res);
-                    MailService(JSON.stringify(e));
+                    MailService(JSON.stringify(res));
                 });
             } catch (e) {
                 ctx.log.info("Historic API", e);
