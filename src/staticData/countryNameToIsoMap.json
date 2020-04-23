@@ -1,4 +1,4 @@
-module.exports = {
+{
     "Afghanistan": "AF",
     "Albania": "AL",
     "Algeria": "DZ",
@@ -210,5 +210,16 @@ module.exports = {
     "Western Sahara": "EH",
     "Yemen": "YE",
     "Zambia": "ZM",
-    "Zimbabwe": "ZW"
+    "Zimbabwe": "ZW",
+    "saint pierre and miquelon": "PM",
+    "anguilla": "AI",
+    "british virgin islands": "VG",
+    "saint barthelemy": "BL",
+    "Holy See": "VA",
+    "Cote d'Ivoire": "CI",
+    "Lao People\"s Democratic Republic": "LA",
+    "Burma": "MM",
+    "Diamond Princess Ship": "DP",
+    "st martin": "MF",
+    "macau": "MO"
 }

@@ -1,4 +1,4 @@
-module.exports =  {
+{
     "AF": "Afghanistan",
     "AL": "Albania",
     "DZ": "Algeria",
@@ -209,5 +209,6 @@ module.exports =  {
     "EH": "Western Sahara",
     "YE": "Yemen",
     "ZM": "Zambia",
-    "ZW": "Zimbabwe"
+    "ZW": "Zimbabwe",
+    "DP": "Diamond Princess"
 }

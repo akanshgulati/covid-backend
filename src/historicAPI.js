@@ -1,12 +1,12 @@
 const { json } = require('server/reply');
-const { NovelCovid } = require('novelcovid');
 const axios = require('axios');
-const Redis = require('./services/redis');
+const {RedisGet, RedisSet} = require('./services/redis');
 const RedisKeys = require('./constants/redisKey');
 const crypto = require('crypto');
 const LocationService = require('./services/location');
 const countryNameToIsoMap = require('./staticData/countryNameToIsoMap');
 const countryISOToName = require('./staticData/countryISOMap');
+const MailService = require('./services/mail-server');
 
 function getHash(data) {
     return crypto
@@ -15,32 +15,9 @@ function getHash(data) {
         .digest('base64');
 }
 
-function RedisSet(key, value) {
-    if (typeof key === 'undefined' || typeof value === 'undefined') {
-        return;
-    }
-    if (typeof value === typeof {}) {
-        return Redis.set(key, JSON.stringify(value));
-    }
-    return Redis.set(key, value);
-}
-
-function RedisGet(key) {
-    if (typeof key === 'undefined') {
-        return;
-    }
-    return Redis.get(key).then(value => {
-        try {
-            return JSON.parse(value);
-        } catch (e) {
-            return value;
-        }
-    });
-}
-
 function updateAllCountryData(data) {
     data.forEach(datum => {
-        if (datum.country && datum.province){
+        if (datum.country && datum.province) {
             return;
         }
         const dateKeys = Object.keys(datum.timeline.cases).slice(-30);
@@ -50,12 +27,17 @@ function updateAllCountryData(data) {
             fatal: {},
         };
         const countryKey = countryNameToIsoMap[datum.country];
+        if (!countryKey) {
+            console.log("No CountryKey found", datum.country);
+            // MailService('No CountryKey found', datum.country);
+            return;
+        }
         dateKeys.forEach(date => {
             result.total[date] = datum.timeline.cases[date];
             result.recover[date] = datum.timeline.recovered[date];
             result.fatal[date] = datum.timeline.deaths[date];
         });
-        Redis.get(RedisKeys.HISTORICAL_COUNTRY_HASH + countryKey).then(
+        RedisGet(RedisKeys.HISTORICAL_COUNTRY_HASH + countryKey).then(
             currentHash => {
                 const updatedHash = getHash(result);
                 if (currentHash !== updatedHash) {
@@ -71,7 +53,7 @@ function updateAllCountryData(data) {
 }
 
 async function updateData(redisKey, data) {
-    const currentHash = await Redis.get(RedisKeys.HISTORICAL_COUNTRIES_HASH);
+    const currentHash = await RedisGet(RedisKeys.HISTORICAL_COUNTRIES_HASH);
     const updatedHash = getHash(data);
     if (currentHash !== updatedHash) {
         RedisSet(redisKey, data);
@@ -133,7 +115,12 @@ const info = async ctx => {
 
     const result = await axios.all(promise).then(response => {
         return response.map((datum, index) => {
-            return Object.assign({}, { label: countryISOToName[countries[index]] }, datum);
+            return Object.assign({}, {
+                label: countryISOToName[countries[index]], 
+                total: {},
+                recover: {},
+                fatal: {}
+            }, datum);
         });
     });
     // console.log(result);
