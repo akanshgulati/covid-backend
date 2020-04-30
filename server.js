@@ -7,7 +7,9 @@ const historicAPI = require('./src/historicAPI');
 const LocationService = require('./src/services/location');
 const CronCheck = require('./src/crons');
 const MailService = require('./src/services/mail-server');
+const axios = require('axios');
 const {CountryHistoricDataScript} = require("./src/historicAPI");
+const {USStatesHistoricDataScript} = require("./src/USAHistoricalAPI");
 
 const stat = [
     post('/get/stats', statAPI.info),
@@ -48,18 +50,19 @@ function cronInit(ctx) {
                     }
                 });
             } catch (e) {
+                console.error(e);
                 MailService(JSON.stringify(e));
             }
         }, 21600 * 1000);
         
         setInterval(() => {
             try {
-                CountryHistoricDataScript().then(res =>{
-                    ctx.log.info(res);
-                    MailService(JSON.stringify(res));
-                });
+                axios.all([USStatesHistoricDataScript(), CountryHistoricDataScript()]).then(axios.spread((usResponse, countriesResp) => {
+                    ctx.log.info(usResponse, countriesResp);
+                    MailService(JSON.stringify(usResponse + '\n' + countriesResp));
+                }));
             } catch (e) {
-                ctx.log.info("Historic API", e);
+                ctx.log.error("Historic API", e);
                 MailService(JSON.stringify(e));
             }
         }, 21600 * 1000);
@@ -88,7 +91,9 @@ server(
     LocationService.init();
     // check in every 6 hours
     cronInit(ctx);
-    CountryHistoricDataScript().then(res =>{
-        console.log(res);
+    axios.all([USStatesHistoricDataScript(), CountryHistoricDataScript()]).then(axios.spread((usResponse, countriesResp)=>{
+        console.log(usResponse, countriesResp);
+    })).catch(e =>{
+        console.error(e);  
     });
 });

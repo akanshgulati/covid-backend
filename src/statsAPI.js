@@ -219,6 +219,7 @@ function formatUSStates(data) {
                 activeSymbol: '+',
             },
             updated: '',
+            hasHistoricData: true
         };
     });
 }
