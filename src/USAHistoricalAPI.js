@@ -79,7 +79,7 @@ const info = async USStates => {
     const promises = USStates.map(USState => {
         const stateCode = USStatesEnum[USState.toLowerCase()];
         if (!stateCode) {
-            MailService('No US State key found', USState);
+            MailService('No US State key found -' +  USState);
             return Promise.resolve({
                 country: 'US',
                 label: USState,
