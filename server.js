@@ -8,8 +8,9 @@ const LocationService = require('./src/services/location');
 const CronCheck = require('./src/crons');
 const MailService = require('./src/services/mail-server');
 const axios = require('axios');
-const {CountryHistoricDataScript} = require("./src/historicAPI");
-const {USStatesHistoricDataScript} = require("./src/USAHistoricalAPI");
+const { CountryHistoricDataScript } = require('./src/historicAPI');
+const { USStatesHistoricDataScript } = require('./src/USAHistoricalAPI');
+const { IndianStatesHistoricDataScript } = require('./src/IndiaHistoricalAPI');
 
 const stat = [
     post('/get/stats', statAPI.info),
@@ -54,15 +55,33 @@ function cronInit(ctx) {
                 MailService(JSON.stringify(e));
             }
         }, 21600 * 1000);
-        
+
         setInterval(() => {
             try {
-                axios.all([USStatesHistoricDataScript(), CountryHistoricDataScript()]).then(axios.spread((usResponse, countriesResp) => {
-                    ctx.log.info(usResponse, countriesResp);
-                    MailService(JSON.stringify(usResponse + '\n' + countriesResp));
-                }));
+                axios
+                    .all([
+                        USStatesHistoricDataScript(),
+                        CountryHistoricDataScript(),
+                        IndianStatesHistoricDataScript(),
+                    ])
+                    .then(
+                        axios.spread(
+                            (usResponse, countriesResp, indianResponse) => {
+                                ctx.log.info(
+                                    usResponse,
+                                    countriesResp,
+                                    indianResponse
+                                );
+                                MailService(
+                                    JSON.stringify(
+                                        usResponse + '\n' + countriesResp + '\n' + indianResponse
+                                    )
+                                );
+                            }
+                        )
+                    );
             } catch (e) {
-                ctx.log.error("Historic API", e);
+                ctx.log.error('Historic API', e);
                 MailService(JSON.stringify(e));
             }
         }, 21600 * 1000);
@@ -91,9 +110,14 @@ server(
     LocationService.init();
     // check in every 6 hours
     cronInit(ctx);
-    axios.all([USStatesHistoricDataScript(), CountryHistoricDataScript()]).then(axios.spread((usResponse, countriesResp)=>{
-        console.log(usResponse, countriesResp);
-    })).catch(e =>{
-        console.error(e);  
-    });
+    axios
+        .all([USStatesHistoricDataScript(), CountryHistoricDataScript(), IndianStatesHistoricDataScript()])
+        .then(
+            axios.spread((usResponse, countriesResp, indianResponses) => {
+                console.log(usResponse, countriesResp, indianResponses);
+            })
+        )
+        .catch(e => {
+            console.error(e);
+        });
 });

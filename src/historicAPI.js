@@ -8,6 +8,7 @@ const countryNameToIsoMap = require('./staticData/countryNameToIsoMap');
 const countryISOToName = require('./staticData/countryISOMap');
 const MailService = require('./services/mail-server');
 const {info: USAHistoricalData} = require("./USAHistoricalAPI");
+const {info: IndiaHistoricalData} = require("./IndiaHistoricalAPI");
 
 function getHash(data) {
     return crypto
@@ -108,7 +109,7 @@ const info = async ctx => {
     const promise = countries.map(country =>
         RedisGet(RedisKeys.HISTORICAL_COUNTRY + country)
     );
-    let countriesResultPromise, USStateResultPromise;
+    let countriesResultPromise, USStateResultPromise, IndianStateResultPromise;
     
     if (countries.length) {
         countriesResultPromise = axios.all(promise).then(response => {
@@ -130,9 +131,15 @@ const info = async ctx => {
     } else {
         USStateResultPromise = Promise.resolve([]);
     }
+
+    if (IndianStates.length) {
+        IndianStateResultPromise = IndiaHistoricalData(IndianStates)
+    } else {
+        IndianStateResultPromise = Promise.resolve([]);
+    }
     let result = [];
-    await axios.all([countriesResultPromise, USStateResultPromise]).then(axios.spread((countriesArr, usStatesArr) => {
-        result = [].concat(countriesArr, usStatesArr);
+    await axios.all([countriesResultPromise, USStateResultPromise, IndianStateResultPromise]).then(axios.spread((countriesArr, usStatesArr, indianStatesArr) => {
+        result = [].concat(countriesArr, usStatesArr, indianStatesArr);
     }));
     // console.log(result);
 
