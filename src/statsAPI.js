@@ -276,6 +276,7 @@ function formatIndianStates(data) {
                 recoverSymbol: '+',
                 activeSymbol: '+',
             },
+            hasHistoricData: true,
             updated: item.lastupdatedtime && formatIndianDate(item.lastupdatedtime),
         };
     });
