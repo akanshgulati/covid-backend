@@ -1,8 +1,14 @@
 const { json } = require('server/reply');
 const { NovelCovid } = require('novelcovid');
 const axios = require('axios');
-
+const {getLocationsInfo}  = require("./services/location");
 exports.getAll = async () => {
+    const savedLocations = getLocationsInfo();
+    if (savedLocations) {
+        return json({
+            locations: savedLocations
+        });
+    }
     let covid = new NovelCovid();
 
     const result = await axios.all([
