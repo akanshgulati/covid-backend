@@ -4,6 +4,7 @@ const { status, header } = server.reply;
 const statAPI = require('./src/statsAPI');
 const locationAPI = require('./src/locationAPI');
 const historicAPI = require('./src/historicAPI');
+const districtAPI = require('./src/districtAPI');
 const LocationService = require('./src/services/location');
 const CronCheck = require('./src/crons');
 const MailService = require('./src/services/mail-server');
@@ -16,6 +17,7 @@ const stat = [
     post('/get/stats', statAPI.info),
     get('/get/locations', locationAPI.getAll),
     post('/get/historic', historicAPI.info),
+    get('/get/district-wise/:stateCode', districtAPI.getStateDistrictData)
 ];
 
 const cors = [

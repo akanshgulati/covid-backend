@@ -277,6 +277,7 @@ function formatIndianStates(data) {
                 activeSymbol: '+',
             },
             hasHistoricData: true,
+            hasDistrictInfo:true,
             updated: item.lastupdatedtime && formatIndianDate(item.lastupdatedtime),
         };
     });
